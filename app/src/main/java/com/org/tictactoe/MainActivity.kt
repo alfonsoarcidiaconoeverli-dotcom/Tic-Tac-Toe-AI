@@ -3,7 +3,7 @@ package com.org.tictactoe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.*
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,67 +16,81 @@ import com.org.tictactoe.ui.theme.TicTacToeTheme
 
 @OptIn(ExperimentalAnimationApi::class)
 class MainActivity : ComponentActivity() {
-    var feedbackManager: FeedbackManager? = null  
+    var feedbackManager: FeedbackManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         feedbackManager = FeedbackManager(this)
-        
+
         setContent {
             TicTacToeTheme {
                 var currentScreen by remember { mutableStateOf("menu") }
-                
-                when (currentScreen) {
-                    "menu" -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Tic Tac Toe",
-                                style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.padding(bottom = 32.dp)
-                            )
-                            
-                            Button(
-                                onClick = { currentScreen = "game" },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                Text("Start Game", fontSize = 20.sp)
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        when (currentScreen) {
+                            "menu" -> {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "Tic Tac Toe",
+                                        style = MaterialTheme.typography.headlineLarge,
+                                        modifier = Modifier.padding(bottom = 32.dp)
+                                    )
+
+                                    Button(
+                                        onClick = { currentScreen = "game" },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.8f)
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text("Start Game", fontSize = 20.sp)
+                                    }
+
+                                    Button(
+                                        onClick = { currentScreen = "ai" },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.8f)
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text("Start with AI", fontSize = 20.sp)
+                                    }
+                                }
                             }
-                            
-                            Button(
-                                onClick = { currentScreen = "ai" },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                Text("Start with AI", fontSize = 20.sp)
+
+                            "game" -> {
+                                feedbackManager?.let { feedback ->
+                                    TicTacToeGame(
+                                        gameState = GameState(),
+                                        feedbackManager = feedback,
+                                        onBackClick = { currentScreen = "menu" }
+                                    )
+                                }
+                            }
+
+                            "ai" -> {
+                                feedbackManager?.let { feedback ->
+                                    AIGameScreen(
+                                        feedbackManager = feedback,
+                                        onBackClick = { currentScreen = "menu" }
+                                    )
+                                }
                             }
                         }
                     }
-                    "game" -> {
-                        feedbackManager?.let { feedback ->
-                            TicTacToeGame(
-                                gameState = GameState(),
-                                feedbackManager = feedback,
-                                onBackClick = { currentScreen = "menu" }
-                            )
-                        }
-                    }
-                    "ai" -> {
-                        feedbackManager?.let { feedback ->
-                            AIGameScreen(
-                                feedbackManager = feedback,
-                                onBackClick = { currentScreen = "menu" }
-                            )
-                        }
-                    }
+
+                    AdMobBanner(
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -115,9 +129,7 @@ fun StartScreen(onStartClick: () -> Unit, onStartAIClick: () -> Unit) {
             Text("Start Game", style = MaterialTheme.typography.titleLarge)
         }
         Button(
-            onClick = {
-                onStartAIClick()
-            },
+            onClick = { onStartAIClick() },
             modifier = Modifier
                 .padding(16.dp)
                 .width(200.dp)
@@ -139,7 +151,6 @@ fun TicTacToeGame(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Game board
         for (i in 0..2) {
             Row(
                 modifier = Modifier.padding(4.dp),
@@ -147,9 +158,7 @@ fun TicTacToeGame(
             ) {
                 for (j in 0..2) {
                     Button(
-                        onClick = {
-                            gameState.makeMove(i, j, feedbackManager)
-                        },
+                        onClick = { gameState.makeMove(i, j, feedbackManager) },
                         modifier = Modifier
                             .size(100.dp)
                             .padding(4.dp)
@@ -163,7 +172,6 @@ fun TicTacToeGame(
             }
         }
 
-        // Game status
         gameState.winner?.let { winner ->
             if (winner != ' ') {
                 Text(
@@ -182,7 +190,6 @@ fun TicTacToeGame(
             )
         }
 
-        // Current player
         if (gameState.winner == null && !gameState.isDraw) {
             Text(
                 text = "Current Player: ${gameState.currentPlayer}",
@@ -191,7 +198,6 @@ fun TicTacToeGame(
             )
         }
 
-        // Reset and Back buttons
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -205,3 +211,4 @@ fun TicTacToeGame(
         }
     }
 }
+```0
