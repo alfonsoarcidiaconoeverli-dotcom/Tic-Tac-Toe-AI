@@ -18,11 +18,15 @@ fun AdMobBanner(modifier: Modifier = Modifier) {
         factory = {
             AdView(context).apply {
                 setAdSize(AdSize.BANNER)
-                adUnitId = "ca-app-pub-6445825465110921/6710007178"
+
+                // ✅ usa il tuo Banner Ad Unit ID (quello corretto che mi avevi dato)
+                adUnitId = "ca-app-pub-6445825465110921/1542457939"
+
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
+
                 loadAd(AdRequest.Builder().build())
             }
         }
