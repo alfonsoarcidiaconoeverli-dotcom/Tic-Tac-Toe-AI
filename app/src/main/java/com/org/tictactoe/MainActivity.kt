@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.org.tictactoe.ui.theme.TicTacToeTheme
 import com.google.android.gms.ads.MobileAds
+import com.org.tictactoe.ui.theme.TicTacToeTheme
 
 @OptIn(ExperimentalAnimationApi::class)
 class MainActivity : ComponentActivity() {
@@ -21,23 +21,30 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        feedbackManager = FeedbackManager(this)
 
         // Init AdMob
         MobileAds.initialize(this) {}
+
+        feedbackManager = FeedbackManager(this)
 
         setContent {
             TicTacToeTheme {
                 var currentScreen by remember { mutableStateOf("menu") }
 
-                // Layout con banner fisso sotto
-                Column(modifier = Modifier.fillMaxSize()) {
-
-                    // Contenuto principale (sopra il banner)
+                // Banner fisso in basso
+                Scaffold(
+                    bottomBar = {
+                        AdMobBanner(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                        )
+                    }
+                ) { innerPadding ->
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
+                            .fillMaxSize()
+                            .padding(innerPadding)
                     ) {
                         when (currentScreen) {
                             "menu" -> {
@@ -94,13 +101,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
-                    // Banner fisso in basso (60dp è standard)
-                    AdMobBanner(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                    )
                 }
             }
         }
@@ -157,7 +157,9 @@ fun TicTacToeGame(
     onBackClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 60.dp), // spazio extra sopra il banner
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
