@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.org.tictactoe.ui.theme.TicTacToeTheme
+import com.google.android.gms.ads.MobileAds
 
 @OptIn(ExperimentalAnimationApi::class)
 class MainActivity : ComponentActivity() {
@@ -22,63 +23,84 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         feedbackManager = FeedbackManager(this)
 
+        // Init AdMob
+        MobileAds.initialize(this) {}
+
         setContent {
             TicTacToeTheme {
                 var currentScreen by remember { mutableStateOf("menu") }
 
-                when (currentScreen) {
-                    "menu" -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Tic Tac Toe",
-                                style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.padding(bottom = 32.dp)
-                            )
+                // Layout con banner fisso sotto
+                Column(modifier = Modifier.fillMaxSize()) {
 
-                            Button(
-                                onClick = { currentScreen = "game" },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                Text("Start Game", fontSize = 20.sp)
+                    // Contenuto principale (sopra il banner)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        when (currentScreen) {
+                            "menu" -> {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "Tic Tac Toe",
+                                        style = MaterialTheme.typography.headlineLarge,
+                                        modifier = Modifier.padding(bottom = 32.dp)
+                                    )
+
+                                    Button(
+                                        onClick = { currentScreen = "game" },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.8f)
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text("Start Game", fontSize = 20.sp)
+                                    }
+
+                                    Button(
+                                        onClick = { currentScreen = "ai" },
+                                        modifier = Modifier
+                                            .fillMaxWidth(0.8f)
+                                            .padding(vertical = 8.dp)
+                                    ) {
+                                        Text("Start with AI", fontSize = 20.sp)
+                                    }
+                                }
                             }
 
-                            Button(
-                                onClick = { currentScreen = "ai" },
-                                modifier = Modifier
-                                    .fillMaxWidth(0.8f)
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                Text("Start with AI", fontSize = 20.sp)
+                            "game" -> {
+                                feedbackManager?.let { feedback ->
+                                    TicTacToeGame(
+                                        gameState = GameState(),
+                                        feedbackManager = feedback,
+                                        onBackClick = { currentScreen = "menu" }
+                                    )
+                                }
+                            }
+
+                            "ai" -> {
+                                feedbackManager?.let { feedback ->
+                                    AIGameScreen(
+                                        feedbackManager = feedback,
+                                        onBackClick = { currentScreen = "menu" }
+                                    )
+                                }
                             }
                         }
                     }
 
-                    "game" -> {
-                        feedbackManager?.let { feedback ->
-                            TicTacToeGame(
-                                gameState = GameState(),
-                                feedbackManager = feedback,
-                                onBackClick = { currentScreen = "menu" }
-                            )
-                        }
-                    }
-
-                    "ai" -> {
-                        feedbackManager?.let { feedback ->
-                            AIGameScreen(
-                                feedbackManager = feedback,
-                                onBackClick = { currentScreen = "menu" }
-                            )
-                        }
-                    }
+                    // Banner fisso in basso (60dp è standard)
+                    AdMobBanner(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp)
+                    )
                 }
             }
         }
