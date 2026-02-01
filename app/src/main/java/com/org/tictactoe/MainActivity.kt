@@ -11,6 +11,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,9 +44,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TicTacToeTheme {
+
                 var currentScreen by remember { mutableStateOf("menu") }
 
-                // Gradient premium (senza drawable)
+                // Background premium (gradient leggero)
                 val premiumBg = Brush.verticalGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.background,
@@ -76,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             .background(premiumBg)
                             .padding(innerPadding)
                     ) {
+
                         AnimatedContent(
                             targetState = currentScreen,
                             transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -137,7 +141,9 @@ private fun PremiumMenu(
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.primary
         )
+
         Spacer(Modifier.height(8.dp))
+
         Text(
             text = stringResource(id = R.string.menu_subtitle),
             style = MaterialTheme.typography.bodyMedium,
@@ -172,9 +178,9 @@ private fun PremiumMenu(
 
 /**
  * UI premium del gioco:
- * - celle come Card arrotondate
+ * - celle Card arrotondate
  * - animazione X/O (scale+fade)
- * - status pulito
+ * - highlight celle vincenti (usa gameState.winningCells)
  */
 @Composable
 fun TicTacToeGamePremium(
@@ -257,6 +263,7 @@ fun TicTacToeGamePremium(
                                 xColor = xColor,
                                 oColor = oColor,
                                 enabled = (gameState.winner == null && !gameState.isDraw),
+                                isWinning = gameState.winningCells.contains(i to j),
                                 onClick = { gameState.makeMove(i, j, feedbackManager) }
                             )
                         }
@@ -279,7 +286,7 @@ fun TicTacToeGamePremium(
                     .height(52.dp),
                 shape = MaterialTheme.shapes.extraLarge
             ) {
-                Text(text = stringResource(id = R.string.back_menu))
+                Text(text = "↩  " + stringResource(id = R.string.back_menu))
             }
 
             Button(
@@ -289,7 +296,7 @@ fun TicTacToeGamePremium(
                     .height(52.dp),
                 shape = MaterialTheme.shapes.extraLarge
             ) {
-                Text(text = stringResource(id = R.string.reset_game))
+                Text(text = "⟲  " + stringResource(id = R.string.reset_game))
             }
         }
     }
@@ -301,6 +308,7 @@ private fun PremiumCell(
     xColor: Color,
     oColor: Color,
     enabled: Boolean,
+    isWinning: Boolean,
     onClick: () -> Unit
 ) {
     val symbol = if (value == ' ') "" else value.toString()
@@ -310,14 +318,25 @@ private fun PremiumCell(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
+    val bg by animateColorAsState(
+        targetValue = if (isWinning) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.22f)
+        else MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        label = "cellBg"
+    )
+
+    val shadow by animateDpAsState(
+        targetValue = if (isWinning) 14.dp else 6.dp,
+        label = "cellShadow"
+    )
+
     Surface(
         modifier = Modifier.size(92.dp),
         shape = RoundedCornerShape(22.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        color = bg,
         tonalElevation = 0.dp,
-        shadowElevation = 6.dp,
+        shadowElevation = shadow,
         onClick = onClick,
-        enabled = enabled && value == ' ' // cliccabile solo se vuota
+        enabled = enabled && value == ' '
     ) {
         Box(contentAlignment = Alignment.Center) {
             AnimatedVisibility(
