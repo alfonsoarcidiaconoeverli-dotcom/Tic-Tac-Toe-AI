@@ -1,86 +1,94 @@
-package com.org.tictactoe
+ package com.org.tictactoe
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 class GameState {
-    private val _board = Array(3) { Array(3) { mutableStateOf(' ') } }
-    val board: Array<Array<Char>>
-        get() = Array(3) { i -> Array(3) { j -> _board[i][j].value } }
+
+    private val board = Array(3) { CharArray(3) { ' ' } }
 
     var currentPlayer by mutableStateOf('X')
         private set
+
     var winner by mutableStateOf<Char?>(null)
         private set
+
     var isDraw by mutableStateOf(false)
         private set
 
-    fun getBoardValue(row: Int, col: Int): Char = _board[row][col].value
+    // ✅ NUOVO: celle vincenti (per highlight)
+    var winningCells by mutableStateOf<List<Pair<Int, Int>>>(emptyList())
+        private set
 
-    fun makeMove(row: Int, col: Int, feedbackManager: FeedbackManager): Boolean {
-        if (winner != null || isDraw || _board[row][col].value != ' ') {
-            return false
+    fun getBoardValue(i: Int, j: Int): Char = board[i][j]
+
+    fun makeMove(i: Int, j: Int, feedbackManager: FeedbackManager) {
+        if (winner != null || isDraw) return
+        if (board[i][j] != ' ') return
+
+        board[i][j] = currentPlayer
+
+        // feedback (se ce l’hai)
+        try {
+            feedbackManager.playMoveEffect()
+        } catch (_: Throwable) {
+            // ignora se non esiste
         }
 
-        _board[row][col].value = currentPlayer
-        feedbackManager.playMoveEffect()
+        val (w, winLine) = checkWinner()
+        if (w != null) {
+            winner = w
+            winningCells = winLine
+            return
+        }
 
-        when {
-            checkWinner() != ' ' -> {
-                winner = currentPlayer
-                feedbackManager.playWinEffect()
-            }
-            checkDraw() -> {
-                isDraw = true
-                feedbackManager.playDrawEffect()
-            }
-            else -> {
-                currentPlayer = if (currentPlayer == 'X') 'O' else 'X'
-            }
+        if (isBoardFull()) {
+            isDraw = true
+            winningCells = emptyList()
+            return
         }
-        return true
-    }
 
-    fun checkWinner(): Char {
-        // Check rows, columns, and diagonals for a winner
-        for (i in 0..2) {
-            if (_board[i][0].value == _board[i][1].value && 
-                _board[i][1].value == _board[i][2].value && 
-                _board[i][0].value != ' ') {
-                return _board[i][0].value
-            }
-            if (_board[0][i].value == _board[1][i].value && 
-                _board[1][i].value == _board[2][i].value && 
-                _board[0][i].value != ' ') {
-                return _board[0][i].value
-            }
-        }
-        if (_board[0][0].value == _board[1][1].value && 
-            _board[1][1].value == _board[2][2].value && 
-            _board[0][0].value != ' ') {
-            return _board[0][0].value
-        }
-        if (_board[0][2].value == _board[1][1].value && 
-            _board[1][1].value == _board[2][0].value && 
-            _board[0][2].value != ' ') {
-            return _board[0][2].value
-        }
-        return ' '
-    }
-
-    private fun checkDraw(): Boolean {
-        return _board.all { row -> row.all { it.value != ' ' } }
+        currentPlayer = if (currentPlayer == 'X') 'O' else 'X'
     }
 
     fun reset() {
-        for (i in 0..2) {
-            for (j in 0..2) {
-                _board[i][j].value = ' '
-            }
-        }
+        for (i in 0..2) for (j in 0..2) board[i][j] = ' '
         currentPlayer = 'X'
         winner = null
         isDraw = false
+        winningCells = emptyList()
+    }
+
+    private fun isBoardFull(): Boolean {
+        for (i in 0..2) for (j in 0..2) if (board[i][j] == ' ') return false
+        return true
+    }
+
+    private fun checkWinner(): Pair<Char?, List<Pair<Int, Int>>> {
+        val lines = listOf(
+            // rows
+            listOf(0 to 0, 0 to 1, 0 to 2),
+            listOf(1 to 0, 1 to 1, 1 to 2),
+            listOf(2 to 0, 2 to 1, 2 to 2),
+            // cols
+            listOf(0 to 0, 1 to 0, 2 to 0),
+            listOf(0 to 1, 1 to 1, 2 to 1),
+            listOf(0 to 2, 1 to 2, 2 to 2),
+            // diagonals
+            listOf(0 to 0, 1 to 1, 2 to 2),
+            listOf(0 to 2, 1 to 1, 2 to 0)
+        )
+
+        for (line in lines) {
+            val (a, b, c) = line
+            val v1 = board[a.first][a.second]
+            val v2 = board[b.first][b.second]
+            val v3 = board[c.first][c.second]
+            if (v1 != ' ' && v1 == v2 && v2 == v3) {
+                return v1 to line
+            }
+        }
+        return null to emptyList()
     }
 }
