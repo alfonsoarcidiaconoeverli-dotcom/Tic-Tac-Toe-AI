@@ -4,17 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.android.gms.ads.MobileAds
 import com.org.tictactoe.ui.theme.TicTacToeTheme
 
@@ -26,26 +35,37 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // AdMob init (ok)
+        // AdMob init
         MobileAds.initialize(this)
 
         feedbackManager = FeedbackManager(this)
 
         setContent {
             TicTacToeTheme {
-
                 var currentScreen by remember { mutableStateOf("menu") }
+
+                // Gradient premium (senza drawable)
+                val premiumBg = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.background.copy(alpha = 0.92f),
+                        MaterialTheme.colorScheme.background
+                    )
+                )
 
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
-                        // Altezza stabile = banner sempre visibile
-                        Surface(tonalElevation = 0.dp) {
-                            AdMobBanner(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(50.dp)
-                            )
+                        // Banner sempre visibile + safe area navigation bar
+                        Column(Modifier.fillMaxWidth()) {
+                            Surface(tonalElevation = 0.dp) {
+                                AdMobBanner(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
+                                )
+                            }
+                            Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
                         }
                     }
                 ) { innerPadding ->
@@ -53,15 +73,14 @@ class MainActivity : ComponentActivity() {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
+                            .background(premiumBg)
                             .padding(innerPadding)
                     ) {
-
                         AnimatedContent(
                             targetState = currentScreen,
                             transitionSpec = { fadeIn() togetherWith fadeOut() },
                             label = "screen"
                         ) { screen ->
-
                             when (screen) {
                                 "menu" -> PremiumMenu(
                                     onStartClick = { currentScreen = "game" },
@@ -70,8 +89,8 @@ class MainActivity : ComponentActivity() {
 
                                 "game" -> {
                                     feedbackManager?.let { feedback ->
-                                        TicTacToeGame(
-                                            gameState = GameState(),
+                                        TicTacToeGamePremium(
+                                            gameState = remember { GameState() },
                                             feedbackManager = feedback,
                                             onBackClick = { currentScreen = "menu" }
                                         )
@@ -149,4 +168,170 @@ private fun PremiumMenu(
             Text(text = stringResource(id = R.string.start_ai))
         }
     }
-}                    
+}
+
+/**
+ * UI premium del gioco:
+ * - celle come Card arrotondate
+ * - animazione X/O (scale+fade)
+ * - status pulito
+ */
+@Composable
+fun TicTacToeGamePremium(
+    gameState: GameState,
+    feedbackManager: FeedbackManager,
+    onBackClick: () -> Unit
+) {
+    val xColor = MaterialTheme.colorScheme.secondary
+    val oColor = MaterialTheme.colorScheme.tertiary
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 18.dp, vertical = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+
+        // Header / Status
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(id = R.string.menu_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                val status = when {
+                    gameState.winner != null && gameState.winner != ' ' ->
+                        stringResource(id = R.string.winner, gameState.winner.toString())
+                    gameState.isDraw ->
+                        stringResource(id = R.string.draw)
+                    else ->
+                        stringResource(id = R.string.current_player, gameState.currentPlayer.toString())
+                }
+
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+
+        // Board
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(14.dp)
+                    .wrapContentHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                for (i in 0..2) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    ) {
+                        for (j in 0..2) {
+                            PremiumCell(
+                                value = gameState.getBoardValue(i, j),
+                                xColor = xColor,
+                                oColor = oColor,
+                                enabled = (gameState.winner == null && !gameState.isDraw),
+                                onClick = { gameState.makeMove(i, j, feedbackManager) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+
+        // Actions
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                Text(text = stringResource(id = R.string.back_menu))
+            }
+
+            Button(
+                onClick = { gameState.reset() },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                Text(text = stringResource(id = R.string.reset_game))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumCell(
+    value: Char,
+    xColor: Color,
+    oColor: Color,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val symbol = if (value == ' ') "" else value.toString()
+    val symbolColor = when (value) {
+        'X' -> xColor
+        'O' -> oColor
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    Surface(
+        modifier = Modifier.size(92.dp),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        tonalElevation = 0.dp,
+        shadowElevation = 6.dp,
+        onClick = onClick,
+        enabled = enabled && value == ' ' // cliccabile solo se vuota
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            AnimatedVisibility(
+                visible = symbol.isNotEmpty(),
+                enter = fadeIn() + scaleIn(initialScale = 0.75f),
+                exit = fadeOut() + scaleOut(targetScale = 0.75f)
+            ) {
+                Text(
+                    text = symbol,
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = symbolColor
+                )
+            }
+        }
+    }
+}
