@@ -1,4 +1,4 @@
- package com.org.tictactoe
+package com.org.tictactoe
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,11 +17,15 @@ class GameState {
     var isDraw by mutableStateOf(false)
         private set
 
-    // ✅ NUOVO: celle vincenti (per highlight)
+    // ✅ Celle vincenti (per highlight UI)
     var winningCells by mutableStateOf<List<Pair<Int, Int>>>(emptyList())
         private set
 
     fun getBoardValue(i: Int, j: Int): Char = board[i][j]
+
+    // ✅ NUOVO: getter sicuro per AI (board resta private)
+    fun getBoardSnapshot(): Array<CharArray> =
+        Array(3) { r -> board[r].clone() }
 
     fun makeMove(i: Int, j: Int, feedbackManager: FeedbackManager) {
         if (winner != null || isDraw) return
@@ -29,11 +33,10 @@ class GameState {
 
         board[i][j] = currentPlayer
 
-        // feedback (se ce l’hai)
         try {
             feedbackManager.playMoveEffect()
         } catch (_: Throwable) {
-            // ignora se non esiste
+            // ignora
         }
 
         val (w, winLine) = checkWinner()
