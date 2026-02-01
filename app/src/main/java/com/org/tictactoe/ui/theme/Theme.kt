@@ -7,14 +7,14 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Premium palette (coerente col reskin)
+// Premium palette
 private val PremiumDarkScheme = darkColorScheme(
-    primary = Color(0xFF0F172A),      // brand_primary
-    secondary = Color(0xFF38BDF8),    // brand_secondary (X)
-    tertiary = Color(0xFF22C55E),     // brand_accent (O)
+    primary = Color(0xFF0F172A),      // brand primary
+    secondary = Color(0xFF38BDF8),    // accent (X)
+    tertiary = Color(0xFF22C55E),     // accent (O)
 
     background = Color(0xFF020617),
-    surface = Color(0xFF020617),
+    surface = Color(0xFF0B1220),
     onPrimary = Color(0xFFF8FAFC),
     onSecondary = Color(0xFF020617),
     onTertiary = Color(0xFF020617),
@@ -38,14 +38,11 @@ private val PremiumLightScheme = lightColorScheme(
 
 @Composable
 fun TicTacToeTheme(
-    darkTheme: Boolean = true, // ✅ Premium: di default dark (puoi cambiarlo dopo con settings)
+    // ✅ Default: segue il tema del telefono (niente bug “sempre dark”)
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme || isSystemInDarkTheme()) {
-        PremiumDarkScheme
-    } else {
-        PremiumLightScheme
-    }
+    val colorScheme = if (darkTheme) PremiumDarkScheme else PremiumLightScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
