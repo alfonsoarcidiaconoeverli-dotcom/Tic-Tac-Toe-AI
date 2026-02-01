@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary palette (premium, dark & clean) -->
-    <color name="purple_200">#FFB39DDB</color>
-    <color name="purple_500">#FF5E35B1</color>
-    <color name="purple_700">#FF4527A0</color>
 
-    <!-- Accent / highlight -->
-    <color name="teal_200">#FF26C6DA</color>
-    <color name="teal_700">#FF00838F</color>
+    <!-- BRAND COLORS -->
+    <color name="brand_primary">#0F172A</color>      <!-- Blu notte profondo -->
+    <color name="brand_secondary">#38BDF8</color>    <!-- Azzurro premium -->
+    <color name="brand_accent">#22C55E</color>       <!-- Verde vittoria -->
 
-    <!-- Neutrals -->
-    <color name="black">#FF0F1115</color>
-    <color name="white">#FFF5F6FA</color>
+    <!-- BACKGROUND / SURFACE -->
+    <color name="background">#020617</color>         <!-- Quasi nero -->
+    <color name="surface">#020617</color>
+    <color name="card">#020617</color>
+
+    <!-- TEXT -->
+    <color name="text_primary">#F8FAFC</color>       <!-- Bianco soft -->
+    <color name="text_secondary">#94A3B8</color>     <!-- Grigio elegante -->
+
+    <!-- GAME COLORS -->
+    <color name="player_x">#38BDF8</color>           <!-- X -->
+    <color name="player_o">#22C55E</color>           <!-- O -->
+    <color name="win_highlight">#FACC15</color>      <!-- Giallo vittoria -->
+
+    <!-- SYSTEM -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+
 </resources>
