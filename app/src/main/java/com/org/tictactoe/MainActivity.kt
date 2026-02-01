@@ -3,100 +3,88 @@ package com.org.tictactoe
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.android.gms.ads.MobileAds
 import com.org.tictactoe.ui.theme.TicTacToeTheme
 
 @OptIn(ExperimentalAnimationApi::class)
 class MainActivity : ComponentActivity() {
-    var feedbackManager: FeedbackManager? = null
+
+    private var feedbackManager: FeedbackManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Init AdMob
-        MobileAds.initialize(this) {}
+        // AdMob init (ok)
+        MobileAds.initialize(this)
 
         feedbackManager = FeedbackManager(this)
 
         setContent {
             TicTacToeTheme {
+
                 var currentScreen by remember { mutableStateOf("menu") }
 
-                // Banner fisso in basso
                 Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
-                        AdMobBanner(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                        )
+                        // Altezza stabile = banner sempre visibile
+                        Surface(tonalElevation = 0.dp) {
+                            AdMobBanner(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                            )
+                        }
                     }
                 ) { innerPadding ->
+
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        when (currentScreen) {
-                            "menu" -> {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "Tic Tac Toe",
-                                        style = MaterialTheme.typography.headlineLarge,
-                                        modifier = Modifier.padding(bottom = 32.dp)
-                                    )
 
-                                    Button(
-                                        onClick = { currentScreen = "game" },
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.8f)
-                                            .padding(vertical = 8.dp)
-                                    ) {
-                                        Text("Start Game", fontSize = 20.sp)
-                                    }
+                        AnimatedContent(
+                            targetState = currentScreen,
+                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                            label = "screen"
+                        ) { screen ->
 
-                                    Button(
-                                        onClick = { currentScreen = "ai" },
-                                        modifier = Modifier
-                                            .fillMaxWidth(0.8f)
-                                            .padding(vertical = 8.dp)
-                                    ) {
-                                        Text("Start with AI", fontSize = 20.sp)
+                            when (screen) {
+                                "menu" -> PremiumMenu(
+                                    onStartClick = { currentScreen = "game" },
+                                    onStartAIClick = { currentScreen = "ai" }
+                                )
+
+                                "game" -> {
+                                    feedbackManager?.let { feedback ->
+                                        TicTacToeGame(
+                                            gameState = GameState(),
+                                            feedbackManager = feedback,
+                                            onBackClick = { currentScreen = "menu" }
+                                        )
                                     }
                                 }
-                            }
 
-                            "game" -> {
-                                feedbackManager?.let { feedback ->
-                                    TicTacToeGame(
-                                        gameState = GameState(),
-                                        feedbackManager = feedback,
-                                        onBackClick = { currentScreen = "menu" }
-                                    )
-                                }
-                            }
-
-                            "ai" -> {
-                                feedbackManager?.let { feedback ->
-                                    AIGameScreen(
-                                        feedbackManager = feedback,
-                                        onBackClick = { currentScreen = "menu" }
-                                    )
+                                "ai" -> {
+                                    feedbackManager?.let { feedback ->
+                                        AIGameScreen(
+                                            feedbackManager = feedback,
+                                            onBackClick = { currentScreen = "menu" }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -114,112 +102,51 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun StartScreen(onStartClick: () -> Unit, onStartAIClick: () -> Unit) {
-    val context = LocalContext.current
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Tic Tac Toe",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-        Button(
-            onClick = {
-                (context as? MainActivity)?.feedbackManager?.playStartButtonEffect()
-                onStartClick()
-            },
-            modifier = Modifier
-                .padding(16.dp)
-                .width(200.dp)
-                .height(50.dp)
-        ) {
-            Text("Start Game", style = MaterialTheme.typography.titleLarge)
-        }
-        Button(
-            onClick = { onStartAIClick() },
-            modifier = Modifier
-                .padding(16.dp)
-                .width(200.dp)
-                .height(50.dp)
-        ) {
-            Text("Start with AI", style = MaterialTheme.typography.titleLarge)
-        }
-    }
-}
-
-@Composable
-fun TicTacToeGame(
-    gameState: GameState,
-    feedbackManager: FeedbackManager,
-    onBackClick: () -> Unit
+private fun PremiumMenu(
+    onStartClick: () -> Unit,
+    onStartAIClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 60.dp), // spazio extra sopra il banner
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        for (i in 0..2) {
-            Row(
-                modifier = Modifier.padding(4.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                for (j in 0..2) {
-                    Button(
-                        onClick = { gameState.makeMove(i, j, feedbackManager) },
-                        modifier = Modifier
-                            .size(100.dp)
-                            .padding(4.dp)
-                    ) {
-                        Text(
-                            text = gameState.getBoardValue(i, j).toString(),
-                            fontSize = 32.sp
-                        )
-                    }
-                }
-            }
-        }
+        Text(
+            text = stringResource(id = R.string.menu_title),
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(id = R.string.menu_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+        )
 
-        gameState.winner?.let { winner ->
-            if (winner != ' ') {
-                Text(
-                    text = "Winner: $winner",
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-        }
+        Spacer(Modifier.height(28.dp))
 
-        if (gameState.isDraw) {
-            Text(
-                text = "Game Draw!",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        if (gameState.winner == null && !gameState.isDraw) {
-            Text(
-                text = "Current Player: ${gameState.currentPlayer}",
-                fontSize = 24.sp,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        Button(
+            onClick = onStartClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
-            Button(onClick = onBackClick) {
-                Text("Back to Menu", fontSize = 18.sp)
-            }
-            Button(onClick = { gameState.reset() }) {
-                Text("Reset Game", fontSize = 18.sp)
-            }
+            Text(text = stringResource(id = R.string.start_game))
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onStartAIClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            Text(text = stringResource(id = R.string.start_ai))
         }
     }
-}
+}                    
