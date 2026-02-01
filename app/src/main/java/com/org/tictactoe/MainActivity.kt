@@ -6,6 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -37,7 +42,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // AdMob init
         MobileAds.initialize(this)
 
         feedbackManager = FeedbackManager(this)
@@ -47,7 +51,6 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by remember { mutableStateOf("menu") }
 
-                // Background premium (gradient leggero)
                 val premiumBg = Brush.verticalGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.background,
@@ -59,7 +62,6 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
-                        // Banner sempre visibile + safe area navigation bar
                         Column(Modifier.fillMaxWidth()) {
                             Surface(tonalElevation = 0.dp) {
                                 AdMobBanner(
@@ -72,14 +74,12 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(premiumBg)
                             .padding(innerPadding)
                     ) {
-
                         AnimatedContent(
                             targetState = currentScreen,
                             transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -176,12 +176,6 @@ private fun PremiumMenu(
     }
 }
 
-/**
- * UI premium del gioco:
- * - celle Card arrotondate
- * - animazione X/O (scale+fade)
- * - highlight celle vincenti (usa gameState.winningCells)
- */
 @Composable
 fun TicTacToeGamePremium(
     gameState: GameState,
@@ -190,6 +184,8 @@ fun TicTacToeGamePremium(
 ) {
     val xColor = MaterialTheme.colorScheme.secondary
     val oColor = MaterialTheme.colorScheme.tertiary
+
+    val finished = (gameState.winner != null && gameState.winner != ' ') || gameState.isDraw
 
     Column(
         modifier = Modifier
@@ -247,9 +243,7 @@ fun TicTacToeGamePremium(
             )
         ) {
             Column(
-                modifier = Modifier
-                    .padding(14.dp)
-                    .wrapContentHeight(),
+                modifier = Modifier.padding(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 for (i in 0..2) {
@@ -275,28 +269,51 @@ fun TicTacToeGamePremium(
         Spacer(Modifier.height(18.dp))
 
         // Actions
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            OutlinedButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.extraLarge
+
+            // ✅ RIVINCITA solo a fine partita
+            AnimatedVisibility(
+                visible = finished,
+                enter = fadeIn() + scaleIn(initialScale = 0.92f),
+                exit = fadeOut() + scaleOut(targetScale = 0.92f)
             ) {
-                Text(text = "↩  " + stringResource(id = R.string.back_menu))
+                Button(
+                    onClick = { gameState.reset() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Text(text = "▶  " + stringResource(id = R.string.rematch))
+                }
             }
 
-            Button(
-                onClick = { gameState.reset() },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = MaterialTheme.shapes.extraLarge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(text = "⟲  " + stringResource(id = R.string.reset_game))
+                OutlinedButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Text(text = "↩  " + stringResource(id = R.string.back_menu))
+                }
+
+                Button(
+                    onClick = { gameState.reset() },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = MaterialTheme.shapes.extraLarge
+                ) {
+                    Text(text = "⟲  " + stringResource(id = R.string.reset_game))
+                }
             }
         }
     }
@@ -318,19 +335,38 @@ private fun PremiumCell(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
+    // ✅ WOW: pulsazione lieve solo sulle celle vincenti
+    val infinite = rememberInfiniteTransition(label = "winPulse")
+    val pulseScale = if (isWinning) {
+        infinite.animateFloat(
+            initialValue = 1.0f,
+            targetValue = 1.04f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(650),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pulse"
+        ).value
+    } else 1.0f
+
     val bg by animateColorAsState(
-        targetValue = if (isWinning) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.22f)
+        targetValue = if (isWinning) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.28f)
         else MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
         label = "cellBg"
     )
 
     val shadow by animateDpAsState(
-        targetValue = if (isWinning) 14.dp else 6.dp,
+        targetValue = if (isWinning) 18.dp else 6.dp,
         label = "cellShadow"
     )
 
     Surface(
-        modifier = Modifier.size(92.dp),
+        modifier = Modifier
+            .size(92.dp)
+            .graphicsLayer(
+                scaleX = pulseScale,
+                scaleY = pulseScale
+            ),
         shape = RoundedCornerShape(22.dp),
         color = bg,
         tonalElevation = 0.dp,
