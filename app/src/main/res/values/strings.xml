@@ -1,19 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App -->
     <string name="app_name">Tic Tac Toe Pro</string>
 
     <!-- Menu -->
-    <string name="menu_title">Tic Tac Toe</string>
-    <string name="start_game">Gioca</string>
+    <string name="menu_title">Tic Tac Toe Pro</string>
+    <string name="menu_subtitle">Sfida un amico o metti alla prova l’IA</string>
+    <string name="start_game">Gioca 1 vs 1</string>
     <string name="start_ai">Sfida l’IA</string>
 
     <!-- Game -->
     <string name="current_player">Turno: %1$s</string>
     <string name="winner">Vince: %1$s</string>
     <string name="draw">Pareggio</string>
+    <string name="rematch">Rivincita</string>
     <string name="reset_game">Nuova partita</string>
     <string name="back_menu">Menu</string>
 
-    <!-- Future / Premium ready -->
+    <!-- Premium ready -->
     <string name="stats_title">Statistiche</string>
     <string name="settings_title">Impostazioni</string>
     <string name="sound_on">Suoni</string>
