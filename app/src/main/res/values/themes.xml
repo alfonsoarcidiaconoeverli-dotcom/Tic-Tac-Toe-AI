@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Tema base XML (serve solo per avviare l'app) -->
-    <style name="Theme.TicTacToe" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Tema XML (serve solo ad Android). Material3 lo gestisce Compose -->
+    <style name="Theme.TicTacToe" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/black</item>
         <item name="android:navigationBarColor">@android:color/black</item>
     </style>
